@@ -5,7 +5,9 @@ const swaggerUi = require('swagger-ui-express');
 const morgan = require('morgan');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const apiKeyAuth = require('./middleware/apiKeyAuth');
+
+const oauthRoutes = require('./auth/oauthRoutes');
+const { authenticate: oauthAuthenticate } = oauthRoutes;
 const employeesRouter = require('./routes/employees');
 
 const app = express();
@@ -28,7 +30,7 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     process.exit(1);
   });
 
-// Swagger setup
+// Swagger serve
 app.get('/swagger.json', (req, res) => {
   const swaggerPath = path.join(__dirname, 'swagger', 'swagger.json');
   res.sendFile(swaggerPath);
@@ -36,15 +38,18 @@ app.get('/swagger.json', (req, res) => {
 const swaggerDocument = require('./swagger/swagger.json');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
 
-// Health route
+// Health (public)
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// Employee CRUD - protected by API key
-app.use('/employees', apiKeyAuth, employeesRouter);
+// OAuth token endpoint (x-www-form-urlencoded)
+app.use('/oauth', express.urlencoded({ extended: true }), oauthRoutes.router);
 
-// Default route
+// Protect /employees with OAuth2 token
+app.use('/employees', oauthAuthenticate, employeesRouter);
+
+// Root
 app.get('/', (req, res) => {
-  res.send(`✅ Employee CRUD API running with API Key auth.<br>Docs: <a href="/api-docs">Swagger UI</a>`);
+  res.send(`Employee CRUD API (OAuth2). Docs: <a href="/api-docs">/api-docs</a><br/>Token endpoint: POST /oauth/token`);
 });
 
 // 404

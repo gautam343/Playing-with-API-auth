@@ -1,163 +1,121 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Employee CRUD API (API Key Auth)",
+    "title": "Employee CRUD API (OAuth2)",
     "version": "1.0.0",
-    "description": "Simple CRUD API for employees using Express, MongoDB, and API Key authentication."
+    "description": "Employee CRUD API secured with OAuth2 (in-memory Authorization Server). For testing: password and client_credentials grants."
   },
-  "servers": [
-    {
-      "url": "http://localhost:3000",
-      "description": "Local development server"
-    }
-  ],
+  "servers": [{ "url": "http://localhost:3000" }],
   "components": {
     "securitySchemes": {
-      "ApiKeyAuth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "x-api-key",
-        "description": "Provide your API key (from .env)"
+      "oauth2": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "tokenUrl": "http://localhost:3000/oauth/token",
+            "scopes": {
+              "read": "read access",
+              "write": "write access"
+            }
+          },
+          "clientCredentials": {
+            "tokenUrl": "http://localhost:3000/oauth/token",
+            "scopes": {
+              "read": "read access",
+              "write": "write access"
+            }
+          }
+        }
       }
     },
     "schemas": {
       "Employee": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "6733531c9b123abc45de678f" },
-          "name": { "type": "string", "example": "Alice Doe" },
-          "email": { "type": "string", "example": "alice@example.com" },
-          "position": { "type": "string", "example": "Software Engineer" },
-          "department": { "type": "string", "example": "Engineering" },
-          "salary": { "type": "number", "example": 70000 },
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "position": { "type": "string" },
+          "department": { "type": "string" },
+          "salary": { "type": "number" },
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" }
         }
       },
       "EmployeeInput": {
         "type": "object",
-        "required": ["name", "email", "position", "department", "salary"],
+        "required": ["name","email","position","department","salary"],
         "properties": {
           "name": { "type": "string" },
           "email": { "type": "string" },
           "position": { "type": "string" },
           "department": { "type": "string" },
           "salary": { "type": "number" }
-        },
-        "example": {
-          "name": "Bob Smith",
-          "email": "bob@example.com",
-          "position": "Data Analyst",
-          "department": "Analytics",
-          "salary": 62000
         }
       }
     }
   },
+  "security": [{ "oauth2": ["read", "write"] }],
   "paths": {
     "/health": {
-      "get": {
-        "summary": "Check API health status",
-        "tags": ["System"],
-        "responses": {
-          "200": {
-            "description": "API is running",
-            "content": {
-              "application/json": {
-                "example": { "status": "ok", "timestamp": "2025-11-12T00:00:00.000Z" }
+      "get": { "responses": { "200": { "description": "OK" } } }
+    },
+    "/oauth/token": {
+      "post": {
+        "summary": "OAuth2 token endpoint (password & client_credentials grants)",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grant_type": { "type": "string" },
+                  "username": { "type": "string" },
+                  "password": { "type": "string" },
+                  "client_id": { "type": "string" },
+                  "client_secret": { "type": "string" },
+                  "scope": { "type": "string" }
+                }
               }
             }
           }
-        }
+        },
+        "responses": { "200": { "description": "Token response" } }
       }
     },
     "/employees": {
       "get": {
-        "summary": "Get all employees",
-        "tags": ["Employees"],
-        "security": [{ "ApiKeyAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "List of employees",
-            "content": {
-              "application/json": {
-                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Employee" } }
-              }
-            }
-          },
-          "401": { "description": "Unauthorized - Invalid API Key" }
-        }
+        "summary": "List employees",
+        "security": [{ "oauth2": ["read"] }],
+        "responses": { "200": { "description": "OK" }, "401": { "description": "Unauthorized" } }
       },
       "post": {
-        "summary": "Create new employee",
-        "tags": ["Employees"],
-        "security": [{ "ApiKeyAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Employee created",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } } }
-          },
-          "400": { "description": "Invalid input" },
-          "401": { "description": "Unauthorized - Invalid API Key" }
-        }
+        "summary": "Create employee",
+        "security": [{ "oauth2": ["write"] }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } } } },
+        "responses": { "201": { "description": "Created" } }
       }
     },
     "/employees/{id}": {
       "get": {
-        "summary": "Get one employee by ID",
-        "tags": ["Employees"],
-        "security": [{ "ApiKeyAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
-        ],
-        "responses": {
-          "200": { "description": "Employee found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } } } },
-          "404": { "description": "Employee not found" },
-          "401": { "description": "Unauthorized - Invalid API Key" }
-        }
+        "summary": "Get employee",
+        "security": [{ "oauth2": ["read"] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK" }, "404": { "description": "Not found" } }
       },
       "put": {
-        "summary": "Update employee (replace all fields)",
-        "tags": ["Employees"],
-        "security": [{ "ApiKeyAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } }
-          }
-        },
-        "responses": {
-          "200": { "description": "Employee updated" },
-          "404": { "description": "Employee not found" },
-          "401": { "description": "Unauthorized - Invalid API Key" }
-        }
+        "summary": "Replace employee",
+        "security": [{ "oauth2": ["write"] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } } } },
+        "responses": { "200": { "description": "OK" } }
       },
       "delete": {
-        "summary": "Delete employee by ID",
-        "tags": ["Employees"],
-        "security": [{ "ApiKeyAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
-        ],
-        "responses": {
-          "204": { "description": "Employee deleted" },
-          "404": { "description": "Employee not found" },
-          "401": { "description": "Unauthorized - Invalid API Key" }
-        }
+        "summary": "Delete employee",
+        "security": [{ "oauth2": ["write"] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "204": { "description": "Deleted" } }
       }
     }
-  },
-  "tags": [
-    { "name": "System", "description": "System-related operations" },
-    { "name": "Employees", "description": "Employee CRUD operations (requires x-api-key header)" }
-  ]
+  }
 }

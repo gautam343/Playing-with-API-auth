@@ -1,7 +1,7 @@
 {
-  "name": "employee-crud-express-apikey",
+  "name": "employee-crud-oauth2",
   "version": "1.0.0",
-  "description": "Employee CRUD API using Express, MongoDB, and API Key Authentication",
+  "description": "Employee CRUD API protected by OAuth2 (in-memory authorization server) using oauth2-server.",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
@@ -14,6 +14,7 @@
     "js-yaml": "^4.1.0",
     "mongoose": "^7.5.0",
     "morgan": "^1.10.0",
+    "oauth2-server": "^3.1.1",
     "swagger-ui-express": "^4.6.3"
   },
   "devDependencies": {

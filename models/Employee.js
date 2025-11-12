@@ -1,3 +1,4 @@
+// models/Employee.js
 const mongoose = require('mongoose');
 
 const EmployeeSchema = new mongoose.Schema({
@@ -8,9 +9,7 @@ const EmployeeSchema = new mongoose.Schema({
   salary: { type: Number, required: true, min: 0 }
 }, { timestamps: true });
 
-EmployeeSchema.virtual('id').get(function () {
-  return this._id.toString();
-});
+EmployeeSchema.virtual('id').get(function () { return this._id.toString(); });
 
 EmployeeSchema.set('toJSON', {
   virtuals: true,

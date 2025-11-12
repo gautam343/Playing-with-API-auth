@@ -1,8 +1,9 @@
+// routes/employees.js
 const express = require('express');
 const router = express.Router();
 const Employee = require('../models/Employee');
 
-// Simple validation
+// validation
 function validateEmployee(payload) {
   const { name, email, position, department, salary } = payload;
   if (!name || typeof name !== 'string') return 'name is required and must be a string';
@@ -18,13 +19,12 @@ router.post('/', async (req, res) => {
   try {
     const err = validateEmployee(req.body);
     if (err) return res.status(400).json({ error: err });
-
     const employee = new Employee(req.body);
     await employee.save();
-    return res.status(201).json(employee.toJSON());
+    res.status(201).json(employee.toJSON());
   } catch (e) {
     console.error(e);
-    return res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -55,8 +55,22 @@ router.put('/:id', async (req, res) => {
   try {
     const err = validateEmployee(req.body);
     if (err) return res.status(400).json({ error: err });
-
     const updated = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).lean();
+    if (!updated) return res.status(404).json({ error: 'Employee not found' });
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PATCH (partial)
+router.patch('/:id', async (req, res) => {
+  try {
+    const allowed = ['name','email','position','department','salary'];
+    const payload = {};
+    for (const k of allowed) if (req.body[k] !== undefined) payload[k] = req.body[k];
+    if (Object.keys(payload).length === 0) return res.status(400).json({ error: 'No valid fields provided' });
+    const updated = await Employee.findByIdAndUpdate(req.params.id, { $set: payload }, { new: true, runValidators: true }).lean();
     if (!updated) return res.status(404).json({ error: 'Employee not found' });
     res.json(updated);
   } catch {
