@@ -1,52 +1,81 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Employee CRUD API",
+    "title": "Employee CRUD API (API Key Auth)",
     "version": "1.0.0",
-    "description": "Simple in-memory Employee CRUD API protected with Basic Authentication."
+    "description": "Simple CRUD API for employees using Express, MongoDB, and API Key authentication."
   },
   "servers": [
-    { "url": "http://localhost:3000", "description": "Local server" }
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
   ],
   "components": {
     "securitySchemes": {
-      "basicAuth": {
-        "type": "http",
-        "scheme": "basic"
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Provide your API key (from .env)"
       }
     },
     "schemas": {
       "Employee": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "1" },
+          "id": { "type": "string", "example": "6733531c9b123abc45de678f" },
           "name": { "type": "string", "example": "Alice Doe" },
-          "email": { "type": "string", "format": "email", "example": "alice@example.com" },
+          "email": { "type": "string", "example": "alice@example.com" },
           "position": { "type": "string", "example": "Software Engineer" },
           "department": { "type": "string", "example": "Engineering" },
-          "salary": { "type": "number", "example": 60000 }
-        },
-        "required": ["name", "email", "position", "department", "salary"]
+          "salary": { "type": "number", "example": 70000 },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
       },
-      "Error": {
+      "EmployeeInput": {
         "type": "object",
-        "properties": { "error": { "type": "string" } }
+        "required": ["name", "email", "position", "department", "salary"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "position": { "type": "string" },
+          "department": { "type": "string" },
+          "salary": { "type": "number" }
+        },
+        "example": {
+          "name": "Bob Smith",
+          "email": "bob@example.com",
+          "position": "Data Analyst",
+          "department": "Analytics",
+          "salary": 62000
+        }
       }
     }
   },
-  "security": [{ "basicAuth": [] }],
   "paths": {
+    "/health": {
+      "get": {
+        "summary": "Check API health status",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "API is running",
+            "content": {
+              "application/json": {
+                "example": { "status": "ok", "timestamp": "2025-11-12T00:00:00.000Z" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/employees": {
       "get": {
-        "summary": "List employees",
-        "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "description": "optional search query (name/position/department/email)",
-            "schema": { "type": "string" }
-          }
-        ],
+        "summary": "Get all employees",
+        "tags": ["Employees"],
+        "security": [{ "ApiKeyAuth": [] }],
         "responses": {
           "200": {
             "description": "List of employees",
@@ -55,125 +84,80 @@
                 "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Employee" } }
               }
             }
-          }
+          },
+          "401": { "description": "Unauthorized - Invalid API Key" }
         }
       },
       "post": {
-        "summary": "Create employee",
+        "summary": "Create new employee",
+        "tags": ["Employees"],
+        "security": [{ "ApiKeyAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
+            "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } }
           }
         },
         "responses": {
           "201": {
-            "description": "Created",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
-            }
+            "description": "Employee created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } } }
           },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
-            }
-          }
+          "400": { "description": "Invalid input" },
+          "401": { "description": "Unauthorized - Invalid API Key" }
         }
       }
     },
     "/employees/{id}": {
       "get": {
-        "summary": "Get employee by ID",
+        "summary": "Get one employee by ID",
+        "tags": ["Employees"],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
-          "200": {
-            "description": "Employee found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
-            }
-          }
+          "200": { "description": "Employee found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } } } },
+          "404": { "description": "Employee not found" },
+          "401": { "description": "Unauthorized - Invalid API Key" }
         }
       },
       "put": {
-        "summary": "Replace employee",
+        "summary": "Update employee (replace all fields)",
+        "tags": ["Employees"],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
         ],
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
+            "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } }
           }
         },
         "responses": {
-          "200": {
-            "description": "Updated",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
-            }
-          }
-        }
-      },
-      "patch": {
-        "summary": "Partially update employee",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": { "application/json": { "schema": { "type": "object" } } }
-        },
-        "responses": {
-          "200": {
-            "description": "Updated",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
-            }
-          }
+          "200": { "description": "Employee updated" },
+          "404": { "description": "Employee not found" },
+          "401": { "description": "Unauthorized - Invalid API Key" }
         }
       },
       "delete": {
-        "summary": "Delete employee",
+        "summary": "Delete employee by ID",
+        "tags": ["Employees"],
+        "security": [{ "ApiKeyAuth": [] }],
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
-          "204": { "description": "Deleted" },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
-            }
-          }
+          "204": { "description": "Employee deleted" },
+          "404": { "description": "Employee not found" },
+          "401": { "description": "Unauthorized - Invalid API Key" }
         }
       }
     }
-  }
+  },
+  "tags": [
+    { "name": "System", "description": "System-related operations" },
+    { "name": "Employees", "description": "Employee CRUD operations (requires x-api-key header)" }
+  ]
 }

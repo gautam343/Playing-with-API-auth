@@ -5,9 +5,7 @@ const swaggerUi = require('swagger-ui-express');
 const morgan = require('morgan');
 const cors = require('cors');
 const mongoose = require('mongoose');
-
-const authRoutes = require('./auth/routes');
-const combinedAuth = require('./auth/combinedAuth');
+const apiKeyAuth = require('./middleware/apiKeyAuth');
 const employeesRouter = require('./routes/employees');
 
 const app = express();
@@ -23,15 +21,14 @@ mongoose.set('strictQuery', false);
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log('✅ Connected to MongoDB');
-    console.log('Mongo URI:', MONGO_URI);
-    console.log('Using database name:', mongoose.connection.name);
+    console.log('Database:', mongoose.connection.name);
   })
   .catch(err => {
     console.error('❌ MongoDB connection error:', err.message || err);
     process.exit(1);
   });
 
-// Swagger
+// Swagger setup
 app.get('/swagger.json', (req, res) => {
   const swaggerPath = path.join(__dirname, 'swagger', 'swagger.json');
   res.sendFile(swaggerPath);
@@ -39,18 +36,15 @@ app.get('/swagger.json', (req, res) => {
 const swaggerDocument = require('./swagger/swagger.json');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
 
-// Health route (public)
+// Health route
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// Auth routes (login)
-app.use('/auth', express.json(), authRoutes);
-
-// Employee CRUD — protected (accepts Bearer or Basic)
-app.use('/employees', combinedAuth, employeesRouter);
+// Employee CRUD - protected by API key
+app.use('/employees', apiKeyAuth, employeesRouter);
 
 // Default route
 app.get('/', (req, res) => {
-  res.send(`✅ Employee CRUD API running.<br>Docs: <a href="/api-docs">Swagger UI</a>`);
+  res.send(`✅ Employee CRUD API running with API Key auth.<br>Docs: <a href="/api-docs">Swagger UI</a>`);
 });
 
 // 404
