@@ -9,7 +9,9 @@ module.exports = function (req, res, next) {
   }
 
   const parts = auth.split(' ');
-  if (parts.length !== 2 || parts[0] !== 'Basic') return res.status(400).json({ error: 'Bad Authorization header' });
+  if (parts.length !== 2 || parts[0] !== 'Basic') {
+    return res.status(400).json({ error: 'Bad Authorization header' });
+  }
 
   const buf = Buffer.from(parts[1], 'base64');
   const [user, pass] = buf.toString().split(':');

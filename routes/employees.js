@@ -1,9 +1,8 @@
-// routes/employees.js
 const express = require('express');
 const router = express.Router();
 const Employee = require('../models/Employee');
 
-// Validation helper (simple)
+// Simple validation
 function validateEmployee(payload) {
   const { name, email, position, department, salary } = payload;
   if (!name || typeof name !== 'string') return 'name is required and must be a string';
@@ -14,7 +13,7 @@ function validateEmployee(payload) {
   return null;
 }
 
-// Create
+// CREATE
 router.post('/', async (req, res) => {
   try {
     const err = validateEmployee(req.body);
@@ -29,21 +28,10 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Read all with optional query ?q=
+// READ ALL
 router.get('/', async (req, res) => {
   try {
-    const q = req.query.q ? String(req.query.q).toLowerCase() : null;
-    const filter = {};
-    if (q) {
-      const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      filter.$or = [
-        { name: re },
-        { position: re },
-        { department: re },
-        { email: re }
-      ];
-    }
-    const list = await Employee.find(filter).sort({ createdAt: -1 }).lean();
+    const list = await Employee.find().sort({ createdAt: -1 }).lean();
     res.json(list);
   } catch (e) {
     console.error(e);
@@ -51,72 +39,38 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Read one
+// READ ONE
 router.get('/:id', async (req, res) => {
   try {
     const e = await Employee.findById(req.params.id).lean();
     if (!e) return res.status(404).json({ error: 'Employee not found' });
     res.json(e);
-  } catch (e) {
-    console.error(e);
+  } catch {
     res.status(404).json({ error: 'Employee not found' });
   }
 });
 
-// Replace (PUT)
+// UPDATE (PUT)
 router.put('/:id', async (req, res) => {
   try {
     const err = validateEmployee(req.body);
     if (err) return res.status(400).json({ error: err });
 
-    const updated = await Employee.findByIdAndUpdate(
-      req.params.id,
-      { ...req.body },
-      { new: true, runValidators: true }
-    ).lean();
-
+    const updated = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).lean();
     if (!updated) return res.status(404).json({ error: 'Employee not found' });
     res.json(updated);
-  } catch (e) {
-    console.error(e);
+  } catch {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Partial update (PATCH)
-router.patch('/:id', async (req, res) => {
-  try {
-    const allowed = ['name', 'email', 'position', 'department', 'salary'];
-    const payload = {};
-    for (const key of allowed) {
-      if (req.body[key] !== undefined) payload[key] = req.body[key];
-    }
-    if (Object.keys(payload).length === 0) {
-      return res.status(400).json({ error: 'No valid fields provided for update' });
-    }
-
-    const updated = await Employee.findByIdAndUpdate(
-      req.params.id,
-      { $set: payload },
-      { new: true, runValidators: true }
-    ).lean();
-
-    if (!updated) return res.status(404).json({ error: 'Employee not found' });
-    res.json(updated);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Delete
+// DELETE
 router.delete('/:id', async (req, res) => {
   try {
     const deleted = await Employee.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Employee not found' });
     res.status(204).send();
-  } catch (e) {
-    console.error(e);
+  } catch {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
