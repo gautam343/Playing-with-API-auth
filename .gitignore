@@ -1,0 +1,14 @@
+# in repo root
+cat >> .gitignore <<'EOF'
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# env and local files
+.env
+.DS_Store
+
+# VS Code
+.vscode/
+EOF
