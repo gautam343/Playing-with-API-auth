@@ -1,0 +1,22 @@
+{
+  "name": "employee-crud-express-swagger",
+  "version": "1.0.0",
+  "description": "Employee CRUD API using Node.js + Express with MongoDB, Basic Authentication and Swagger UI.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "swagger-ui-express": "^4.6.3",
+    "js-yaml": "^4.1.0",
+    "morgan": "^1.10.0",
+    "cors": "^2.8.5",
+    "mongoose": "^7.5.0",
+    "dotenv": "^16.1.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}

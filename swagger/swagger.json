@@ -1,0 +1,179 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Employee CRUD API",
+    "version": "1.0.0",
+    "description": "Simple in-memory Employee CRUD API protected with Basic Authentication."
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Local server" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    },
+    "schemas": {
+      "Employee": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "1" },
+          "name": { "type": "string", "example": "Alice Doe" },
+          "email": { "type": "string", "format": "email", "example": "alice@example.com" },
+          "position": { "type": "string", "example": "Software Engineer" },
+          "department": { "type": "string", "example": "Engineering" },
+          "salary": { "type": "number", "example": 60000 }
+        },
+        "required": ["name", "email", "position", "department", "salary"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } }
+      }
+    }
+  },
+  "security": [{ "basicAuth": [] }],
+  "paths": {
+    "/employees": {
+      "get": {
+        "summary": "List employees",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "optional search query (name/position/department/email)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of employees",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Employee" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create employee",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      }
+    },
+    "/employees/{id}": {
+      "get": {
+        "summary": "Get employee by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Employee found",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace employee",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Partially update employee",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Employee" } }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete employee",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}
