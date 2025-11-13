@@ -6,8 +6,8 @@ const morgan = require('morgan');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-const oauthRoutes = require('./auth/oauthRoutes');
-const { authenticate: oauthAuthenticate } = oauthRoutes;
+const authRoutes = require('./auth/routes');
+const jwtAuth = require('./middleware/jwtAuth');
 const employeesRouter = require('./routes/employees');
 
 const app = express();
@@ -18,19 +18,18 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// MongoDB connection
+// MongoDB connect
 mongoose.set('strictQuery', false);
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
-    console.log('✅ Connected to MongoDB');
-    console.log('Database:', mongoose.connection.name);
+    console.log('✅ Connected to MongoDB:', mongoose.connection.name);
   })
   .catch(err => {
     console.error('❌ MongoDB connection error:', err.message || err);
     process.exit(1);
   });
 
-// Swagger serve
+// Swagger
 app.get('/swagger.json', (req, res) => {
   const swaggerPath = path.join(__dirname, 'swagger', 'swagger.json');
   res.sendFile(swaggerPath);
@@ -41,21 +40,21 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explore
 // Health (public)
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// OAuth token endpoint (x-www-form-urlencoded)
-app.use('/oauth', express.urlencoded({ extended: true }), oauthRoutes.router);
+// Auth (login) - public
+app.use('/auth', express.json(), authRoutes);
 
-// Protect /employees with OAuth2 token
-app.use('/employees', oauthAuthenticate, employeesRouter);
+// Employees - PROTECTED by JWT only
+app.use('/employees', jwtAuth, employeesRouter);
 
 // Root
 app.get('/', (req, res) => {
-  res.send(`Employee CRUD API (OAuth2). Docs: <a href="/api-docs">/api-docs</a><br/>Token endpoint: POST /oauth/token`);
+  res.send(`Employee CRUD API (JWT Bearer only). Docs: <a href="/api-docs">/api-docs</a>`);
 });
 
-// 404
+// 404 fallback
 app.use((req, res) => res.status(404).json({ error: 'Not Found' }));
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server listening on http://localhost:${PORT}`);
   console.log(`📘 Swagger UI: http://localhost:${PORT}/api-docs`);
 });

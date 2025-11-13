@@ -1,7 +1,7 @@
 {
-  "name": "employee-crud-oauth2",
+  "name": "employee-crud-jwt-only",
   "version": "1.0.0",
-  "description": "Employee CRUD API protected by OAuth2 (in-memory authorization server) using oauth2-server.",
+  "description": "Employee CRUD API with MongoDB and JWT Bearer authentication (no Basic Auth).",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
@@ -11,10 +11,9 @@
     "cors": "^2.8.5",
     "dotenv": "^16.1.4",
     "express": "^4.18.2",
-    "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
     "morgan": "^1.10.0",
-    "oauth2-server": "^3.1.1",
     "swagger-ui-express": "^4.6.3"
   },
   "devDependencies": {

@@ -1,32 +1,14 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Employee CRUD API (OAuth2)",
+    "title": "Employee CRUD API (JWT Bearer Only)",
     "version": "1.0.0",
-    "description": "Employee CRUD API secured with OAuth2 (in-memory Authorization Server). For testing: password and client_credentials grants."
+    "description": "Employee CRUD API protected by JWT Bearer tokens. Obtain token via POST /auth/login."
   },
   "servers": [{ "url": "http://localhost:3000" }],
   "components": {
     "securitySchemes": {
-      "oauth2": {
-        "type": "oauth2",
-        "flows": {
-          "password": {
-            "tokenUrl": "http://localhost:3000/oauth/token",
-            "scopes": {
-              "read": "read access",
-              "write": "write access"
-            }
-          },
-          "clientCredentials": {
-            "tokenUrl": "http://localhost:3000/oauth/token",
-            "scopes": {
-              "read": "read access",
-              "write": "write access"
-            }
-          }
-        }
-      }
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
     },
     "schemas": {
       "Employee": {
@@ -52,69 +34,66 @@
           "department": { "type": "string" },
           "salary": { "type": "number" }
         }
+      },
+      "Login": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string" },
+          "password": { "type": "string" }
+        }
       }
     }
   },
-  "security": [{ "oauth2": ["read", "write"] }],
   "paths": {
     "/health": {
       "get": { "responses": { "200": { "description": "OK" } } }
     },
-    "/oauth/token": {
+    "/auth/login": {
       "post": {
-        "summary": "OAuth2 token endpoint (password & client_credentials grants)",
-        "requestBody": {
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "grant_type": { "type": "string" },
-                  "username": { "type": "string" },
-                  "password": { "type": "string" },
-                  "client_id": { "type": "string" },
-                  "client_secret": { "type": "string" },
-                  "scope": { "type": "string" }
-                }
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "Token response" } }
+        "summary": "Login to receive JWT token",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Login" } } } },
+        "responses": { "200": { "description": "Token returned" }, "401": { "description": "Invalid credentials" } }
       }
     },
     "/employees": {
       "get": {
         "summary": "List employees",
-        "security": [{ "oauth2": ["read"] }],
+        "security": [{ "bearerAuth": [] }],
         "responses": { "200": { "description": "OK" }, "401": { "description": "Unauthorized" } }
       },
       "post": {
         "summary": "Create employee",
-        "security": [{ "oauth2": ["write"] }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } } } },
-        "responses": { "201": { "description": "Created" } }
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } } } },
+        "responses": { "201": { "description": "Created" }, "400": { "description": "Bad Request" }, "401": { "description": "Unauthorized" } }
       }
     },
     "/employees/{id}": {
       "get": {
         "summary": "Get employee",
-        "security": [{ "oauth2": ["read"] }],
+        "security": [{ "bearerAuth": [] }],
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "OK" }, "404": { "description": "Not found" } }
+        "responses": { "200": { "description": "OK" }, "404": { "description": "Not found" }, "401": { "description": "Unauthorized" } }
       },
       "put": {
         "summary": "Replace employee",
-        "security": [{ "oauth2": ["write"] }],
+        "security": [{ "bearerAuth": [] }],
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } } } },
-        "responses": { "200": { "description": "OK" } }
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmployeeInput" } } } },
+        "responses": { "200": { "description": "OK" }, "401": { "description": "Unauthorized" } }
+      },
+      "patch": {
+        "summary": "Patch employee",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "OK" }, "401": { "description": "Unauthorized" } }
       },
       "delete": {
         "summary": "Delete employee",
-        "security": [{ "oauth2": ["write"] }],
+        "security": [{ "bearerAuth": [] }],
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "204": { "description": "Deleted" } }
+        "responses": { "204": { "description": "Deleted" }, "401": { "description": "Unauthorized" } }
       }
     }
   }
